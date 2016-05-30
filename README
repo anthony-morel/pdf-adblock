@@ -1,0 +1,10 @@
+Usage: pdf-adblock input.pdf [output.pdf]
+
+Remove advert pages from input.pdf based on words coded as characters on the
+page (i.e., assume advert do not have much text or are supplied as graphics).
+
+optional: output.pdf - name of the resulting pdf
+	  if missing, create a -adb suffixed file in the current directory
+
+The word count threshold is set to 100 by default.
+

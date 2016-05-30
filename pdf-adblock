@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+
+# Word in page threshold.  Assume advert if below threshold.
+threshold=100
+suffix=-adb
+
+function usage {
+	cat <<End-of-usage
+Usage: $(basename $0) input.pdf [output.pdf]
+
+Remove advert pages from input.pdf based on words coded as characters on the
+page (i.e., assume advert do not have much text or are supplied as graphics).
+
+optional: output.pdf - name of the resulting pdf
+	  if missing, create a $suffix suffixed file in the current directory
+
+The word count threshold is set to $threshold by default.
+
+End-of-usage
+	exit 0
+}
+
+if [ "$#" -eq 1 ]; then
+	[ -f "$1" ] || usage
+elif [ "$#" -eq 2 ]; then
+	[ -f "$1" ] || usage
+	output=$(readlink -f "$2")
+	output=$(realpath "$output")
+else
+	usage
+fi
+
+input=$(readlink -f "$1")
+input=$(realpath "$input")
+in=$(basename "$input")
+
+if [ "$#" -eq 1 ]; then
+	# if output file is not specified, append suffix
+	# and save in current directory
+	output="$(pwd)/$(sed "s/.pdf\$/$suffix.pdf/i" <<< "$in")"
+fi
+
+in=$(printf %q "$in")
+dir=$(dirname "$input")
+
+# Find the number of pages (should have at least 1)
+pages=$(pdfinfo "$input" | sed -n 's/Pages:\s*\([0-9]\+\)/\1/p')
+
+# Find pages to keep (i.e., below threshold).  Always keep 1st page
+first=1
+last=0
+keep=""
+for ((i=2; i <= $pages; i++)); do
+	words=$(pdftotext "$input" - -f $i -l $i | wc -w)
+	if ((words >= threshold)); then
+		((first == 0)) && first=$i
+		last=0
+	elif ((last == 0)); then
+		last=$((i-1))
+		keep="$keep -dFirstPage=$first -dLastPage=$last $in"
+		first=0
+	fi
+done
+if ((first > 0)); then
+	keep="$keep -dFirstPage=$first -dLastPage=$pages $in"
+fi
+
+# TODO: could translate keep to -sPageList=<comma separated version of keep>
+# However, this is not working with old versions of ghostscript
+
+(cd $dir && gs -sDEVICE=pdfwrite -dNOPAUSE -dBATCH -sOutputFile="$output" $keep 2>/dev/null)
+
