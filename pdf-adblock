@@ -39,6 +39,7 @@ if [ "$#" -eq 1 ]; then
 fi
 
 in=$(printf %q "$in")
+out=$(printf %q "$output")
 dir=$(dirname "$input")
 
 # Find the number of pages (should have at least 1)
@@ -65,6 +66,4 @@ fi
 
 # TODO: could translate keep to -sPageList=<comma separated version of keep>
 # However, this is not working with old versions of ghostscript
-
-(cd $dir && gs -sDEVICE=pdfwrite -dNOPAUSE -dBATCH -sOutputFile="$output" $keep 2>/dev/null)
-
+(cd "$dir" && eval "gs -sDEVICE=pdfwrite -dNOPAUSE -dBATCH -sOutputFile=$out $keep" 2>/dev/null)
