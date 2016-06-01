@@ -25,13 +25,11 @@ if [ "$#" -eq 1 ]; then
 elif [ "$#" -eq 2 ]; then
 	[ -f "$1" ] || usage
 	output=$(readlink -f "$2")
-	output=$(realpath "$output")
 else
 	usage
 fi
 
 input=$(readlink -f "$1")
-input=$(realpath "$input")
 in=$(basename "$input")
 
 if [ "$#" -eq 1 ]; then
